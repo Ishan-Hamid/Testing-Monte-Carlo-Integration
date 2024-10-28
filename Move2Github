@@ -1,0 +1,144 @@
+import numpy
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def findPi(n_points):
+    # Unit square
+    radius = 1
+    # Random numbers in two dimensions x and y
+    ran = numpy.random.uniform(0, 1, size=(n_points, 2))
+
+    pylist = []
+    for i in range(0, n_points):
+        pythag = ran[i, 0] ** 2 + ran[i, 1] ** 2
+        if pythag < radius:
+            pylist.append(1)
+    pi = 4 * (len(pylist) / n_points)
+
+    return pi
+
+
+def integrate(n_points, dim):
+    radius = 1
+    rand = numpy.random.uniform(-1, 1, size=(n_points, dim))
+
+    sublist = []
+    mainlist = []
+    points = 0
+
+    for i in range(0, n_points):
+        for j in range(0, dim):
+            squares = rand[i, j] ** 2
+            sublist.append(squares)
+        if sum(sublist) < radius ** 2:
+            points = points + 1
+        sublist = []
+    vol = (2 ** dim) * points / n_points
+
+    return vol
+
+print(integrate(100000, 2))
+
+#Multi-Dimensional Integration...
+
+n_points = [25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 100000, 500000]
+narrange = np.array(n_points)
+errs1 = []
+errs2 = []
+errs3 = []
+errs4 = []
+errs5 = []
+
+for i in range(0, len(n_points)):
+    er1 = abs(np.pi - integrate(narrange[i], 2))
+    errs1.append(er1)
+
+for i in range(0, len(n_points)):
+    er2 = abs((4 / 3) * np.pi - integrate(narrange[i], 3))
+    errs2.append(er2)
+
+for i in range(0, len(n_points)):
+    er3 = abs(0.5 * np.pi ** 2 - integrate(narrange[i], 4))
+    errs3.append(er3)
+
+for i in range(0, len(n_points)):
+    er4 = abs((8 / 15) * np.pi ** 2 - integrate(narrange[i], 5))
+    errs4.append(er4)
+
+for i in range(0, len(n_points)):
+    er5 = abs((1 / 6) * np.pi ** 3 - integrate(narrange[i], 6))
+    errs5.append(er5)
+
+plt.loglog(n_points, errs1, n_points, errs2, n_points, errs3, n_points, errs4, n_points, errs5, n_points,
+           (1 / np.sqrt(n_points)))
+plt.xlabel('Number of Points')
+plt.ylabel('Error')
+plt.title('MC integration Error in the Volume of N-Dimensional Spheres')
+plt.legend(['dim2', 'dim3', 'dim4', 'dim5', 'dim6', '1/N^0.5'])
+plt.show()
+
+# create a distribution of points according to an arbitrary function. Generate values of x between 0 and 10 distributed according to a this probability density function:
+
+norm = (179 + 24*numpy.arctan(10)+numpy.cos(2*numpy.sqrt(30))+2*numpy.sqrt(30)*numpy.sin(2*numpy.sqrt(30)))/12
+
+def f(x):
+    return  (1 + (2/(1+x**2)+ numpy.cos(numpy.sqrt(3*x))**2))/norm
+
+def genSample(n_points):
+    sample = []
+    m = 0.35
+    while len(sample) < n_points:
+        r = numpy.random.uniform(0, 1, size=(1))
+        x = numpy.random.uniform(0, 10, size = (1))
+        if m*r < f(x):
+            sample.append(x)
+
+    return numpy.array(sample)
+
+
+def test_distribution_shape(sample, f, bins=30, threshold=0.1):
+    hist, bin_edges = np.histogram(sample, bins=bins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # Normalized pdf_values
+    pdf_values = f(bin_centers)
+    pdf_values *= np.sum(hist) / np.sum(pdf_values)
+
+    # Find difference between histogram and PDF values
+    diff = np.abs(hist - pdf_values)
+    assert np.all(diff < threshold), "Distribution shape does not match expected PDF"
+
+
+def test_rejection_rate(n_points, maxf, threshold=0.9):
+    total_trials = 0
+    accepted_trials = 0
+
+    while accepted_trials < n_points:
+        x = 10 * np.random.random()
+        r = np.random.random()
+        total_trials += 1
+        if r * maxf < f(x):
+            accepted_trials += 1
+
+    rejection_rate = (total_trials - accepted_trials) / total_trials
+    assert rejection_rate < threshold, "Rejection rate too high"
+
+xes = genSample(23000)
+ys = []
+for i in range(0,10):
+    pp = f(xes[i])
+    ys.append(pp)
+ts = np.linspace(0,10,100)
+plt.hist(xes, bins = ts, density = True, label = 'Distribution Values')
+
+xs = numpy.linspace(0, 10, 200)
+fs = f(xs)
+plt.plot(xs, fs, label = 'Model Curve');
+plt.ylabel('f(x)')
+plt.xlabel('x')
+plt.xlim(0,10)
+plt.ylim(0,0.25);
+plt.title('Distribution of Points According to a Given Function')
+plt.legend()
+plt.show()
